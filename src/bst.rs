@@ -1,10 +1,8 @@
-use core::marker::PhantomData;
-
 type Link<K, V> = Option<Box<Node<K, V>>>;
 
 #[derive(Debug, Clone)]
 pub struct BST<K, V> {
-    root: Link<K, V>,
+    pub root: Link<K, V>,
 }
 
 #[derive(Debug, Clone)]
@@ -26,36 +24,6 @@ impl<K: Clone + Ord, V: Clone> Node<K, V> {
     }
 }
 
-struct PreOrderIter<K, V>(BST<K, V>);
-struct PostOrderIter<K, V>(BST<K, V>);
-
-struct InOrderIter<K: Ord, V> {
-    stack: Vec<Link<K, V>>,
-    current: Link<K, V>,
-}
-
-impl<K: Ord, V> Iterator for InOrderIter<K, V> {
-    type Item = (K, V);
-
-    fn next(&mut self) -> Option<(K, V)> {
-        loop {
-            if let Some(current) = &self.current {
-                self.stack.push(self.current);
-                self.current = current.left;
-            } else {
-                if let Some(node) = self.stack.pop() {
-                    let current = &node.unwrap();
-                    let result = (current.key, current.value);
-                    self.current = current.right;
-                    return Some(result);
-                } else {
-                    return None;
-                }
-            }
-        }
-    }
-}
-
 impl<K: Ord + PartialEq, V> BST<K, V> {
     pub fn insert(&mut self, input: Node<K, V>) {
         let mut current = &mut self.root;
@@ -69,24 +37,50 @@ impl<K: Ord + PartialEq, V> BST<K, V> {
         *current = Some(Box::new(input));
     }
 
-    pub fn inorder(&self) -> InOrderIter<K, V> {
+    pub fn inorder<'a>(&'a self) -> InOrderIter<'a, K, V> {
         InOrderIter {
             stack: Vec::new(),
-            current: self.root,
-            marker: PhantomData,
+            current: self.root.as_ref(),
         }
     }
 }
 
+struct PreOrderIter<K, V>(BST<K, V>);
+struct PostOrderIter<K, V>(BST<K, V>);
 
+pub struct InOrderIter<'a, K: Ord, V> {
+    stack: Vec<Option<&'a Box<Node<K, V>>>>,
+    current: Option<&'a Box<Node<K, V>>>,
+}
 
+impl<'a, K: Ord, V> Iterator for InOrderIter<'a, K, V> {
+    type Item = (&'a K, &'a V);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if let Some(current) = self.current {
+                self.stack.push(self.current);
+                self.current = current.left.as_ref();
+            } else {
+                if let Some(node) = self.stack.pop() {
+                    let current = node.unwrap();
+                    let result = (&current.key, &current.value);
+                    self.current = current.right.as_ref();
+                    return Some(result);
+                } else {
+                    return None;
+                }
+            }
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
+    fn basic() {
         let node = Node::new(5, "hello");
         let tree = BST { root: Some(Box::new(node)), };
         assert!(tree.root.is_some())
