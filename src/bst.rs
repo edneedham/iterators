@@ -43,12 +43,31 @@ impl<K: Ord + PartialEq, V> BST<K, V> {
             current: self.root.as_ref(),
         }
     }
+    pub fn preorder<'a>(&'a self) -> PreOrderIter<'a, K, V> {
+        PreOrderIter {
+            stack: Vec::new(),
+            current: self.root.as_ref(),
+        }
+    }
+
+    pub fn postorder<'a>(&'a self) -> PostOrderIter<'a, K, V> {
+        PostOrderIter {
+            stack: Vec::new(),
+            current: self.root.as_ref(),
+        }
+    }
 }
 
-struct PreOrderIter<K, V>(BST<K, V>);
-struct PostOrderIter<K, V>(BST<K, V>);
 
 pub struct InOrderIter<'a, K: Ord, V> {
+    stack: Vec<Option<&'a Box<Node<K, V>>>>,
+    current: Option<&'a Box<Node<K, V>>>,
+}
+pub struct PreOrderIter<'a, K: Ord, V> {
+    stack: Vec<Option<&'a Box<Node<K, V>>>>,
+    current: Option<&'a Box<Node<K, V>>>,
+}
+pub struct PostOrderIter<'a, K: Ord, V>{
     stack: Vec<Option<&'a Box<Node<K, V>>>>,
     current: Option<&'a Box<Node<K, V>>>,
 }
@@ -67,6 +86,29 @@ impl<'a, K: Ord, V> Iterator for InOrderIter<'a, K, V> {
                     let result = (&current.key, &current.value);
                     self.current = current.right.as_ref();
                     return Some(result);
+                } else {
+                    return None;
+                }
+            }
+        }
+
+    }
+}
+
+impl<'a, K: Ord, V> Iterator for PreOrderIter<'a, K, V> {
+    type Item = (&'a K, &'a V);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if let Some(current) = self.current {
+                self.stack.push(self.current);
+                let result = (&current.key, &current.value);
+                self.current = current.left.as_ref();
+                return Some(result);
+            } else {
+                if let Some(node) = self.stack.pop() {
+                    let current = node.unwrap();
+                    self.current = current.right.as_ref();
                 } else {
                     return None;
                 }
