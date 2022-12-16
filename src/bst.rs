@@ -1,6 +1,4 @@
 use std::collections::VecDeque;
-use std::fmt::{Display, Formatter};
-use std::fmt::Result as Result;
 
 type Link<K, V> = Option<Box<Node<K, V>>>;
 
@@ -17,7 +15,7 @@ pub struct Node<K, V> {
     pub value: V,
 }
 
-impl<K: Clone + Ord, V> Node<K, V> {
+impl<K: Ord + PartialEq, V> Node<K, V> {
     pub fn new(key: K, value: V) -> Self {
         Self {
             left: None,
@@ -27,7 +25,6 @@ impl<K: Clone + Ord, V> Node<K, V> {
         }
     }
 }
-
 
 impl<K: Ord + PartialEq, V> BST<K, V> {
     pub fn insert(&mut self, input: Node<K, V>) {
@@ -42,6 +39,7 @@ impl<K: Ord + PartialEq, V> BST<K, V> {
         *current = Some(Box::new(input));
     }
 
+    // Breadth-first search to get the height
     pub fn height(&self) -> usize {
         let mut queue = VecDeque::new();
         let mut height = 0;
@@ -49,7 +47,6 @@ impl<K: Ord + PartialEq, V> BST<K, V> {
             return height;
         } else {
             queue.push_back(self.root.as_ref());
-            height += 1;
             while let Some(node) = queue.pop_front() {
                 let current = node.unwrap();
                 height += 1;
@@ -58,13 +55,11 @@ impl<K: Ord + PartialEq, V> BST<K, V> {
                     queue.push_back(current.right.as_ref());
                 } else if current.left.is_some() {
                     queue.push_back(current.left.as_ref());
-                } else if current.right.is_some() {
-                    queue.push_back(current.right.as_ref());
                 } else {
-                    break;
+                    queue.push_back(current.right.as_ref());
                 }
             }
-            return height;
+            height
         }
     }
 
@@ -150,11 +145,6 @@ impl<'a, K: Ord, V> Iterator for PreOrderIter<'a, K, V> {
         }
     }
 }
-/*impl<K: Ord, V> Display for BST<K, V> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        todo!("Displays a tree")
-    }
-}*/
 
 impl<'a, K: Ord, V> Iterator for PostOrderIter<'a, K, V> {
     type Item = (&'a K, &'a V);
@@ -192,45 +182,36 @@ impl<'a, K: Ord, V> Iterator for PostOrderIter<'a, K, V> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn tree_setup() -> BST<i32, &'static str> {
+        let node = Node::new(5, "hello");
+        let node2 = Node::new(8, "world");
+        let node3 = Node::new(11, "rust");
+        let node4 = Node::new(2, "crate");
+        let node5 = Node::new(4, "mod");
+        let node6 = Node::new(7, "iter");
+        let node7 = Node::new(10, "tree");
 
-    #[test]
-    fn basic() {
-        let node = Node::new(5, "hello");
-        let tree = BST { root: Some(Box::new(node)), };
-        assert!(tree.root.is_some())
-    }
-    #[test]
-    fn insert() {
-        let node = Node::new(5, "hello");
-        let node2 = Node::new(11, "world");
         let mut tree = BST { root: Some(Box::new(node)), };
-        tree.insert(node2);
-        assert!(tree.root.unwrap().right.is_some());
-    }
-    #[test]
-    fn absence() {
-        let node = Node::new(5, "hello");
-        let node2 = Node::new(11, "world");
-        let mut tree = BST { root: Some(Box::new(node)), };
-        tree.insert(node2);
-        assert!(tree.root.unwrap().left.is_none());
-    }
-    #[test]
-    fn height() {
-        let node = Node::new(5, "hello");
-        let node2 = Node::new(11, "world");
-        let node3 = Node::new(20, "rust");
-        let node4 = Node::new(3, "crate");
-        let node5 = Node::new(9, "mod");
-        let node6 = Node::new(7, "borrow");
-        let node7 = Node::new(14, "checker");
-        let mut tree = BST { root: Some(Box::new(node)), };
+
         tree.insert(node2);
         tree.insert(node3);
         tree.insert(node4);
         tree.insert(node5);
         tree.insert(node6);
         tree.insert(node7);
-        assert_eq!(tree.height(), 3);
+
+        tree
+    }
+    #[test]
+    fn tree_has_children() {
+        let tree = tree_setup();
+        assert!(tree.root.is_some());
+        assert!(tree.root.as_ref().unwrap().right.is_some());
+        assert!(tree.root.as_ref().unwrap().left.is_some());
+    }
+    #[test]
+    fn height() {
+        let tree = tree_setup();
+        assert_eq!(tree.height(), 4);
     }
 }
