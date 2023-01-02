@@ -9,10 +9,10 @@ pub struct BST<K, V> {
 
 #[derive(Debug)]
 pub struct Node<K, V> {
-    pub left: Link<K, V>,
-    pub right: Link<K, V>,
-    pub key: K,
-    pub value: V,
+    left: Link<K, V>,
+    right: Link<K, V>,
+    key: K,
+    value: V,
 }
 
 impl<K: Ord + PartialEq, V> Node<K, V> {
@@ -26,7 +26,7 @@ impl<K: Ord + PartialEq, V> Node<K, V> {
     }
 }
 
-impl<K: Ord + PartialEq, V> BST<K, V> {
+impl<K: Ord + PartialEq, V: PartialEq> BST<K, V> {
     pub fn insert(&mut self, input: Node<K, V>) {
         let mut current = &mut self.root;
         while let Some(node) = current {
@@ -55,8 +55,10 @@ impl<K: Ord + PartialEq, V> BST<K, V> {
                     queue.push_back(current.right.as_ref());
                 } else if current.left.is_some() {
                     queue.push_back(current.left.as_ref());
-                } else {
+                } else if current.right.is_some() {
                     queue.push_back(current.right.as_ref());
+                } else {
+                    break;
                 }
             }
             height
@@ -71,7 +73,7 @@ impl<K: Ord + PartialEq, V> BST<K, V> {
     }
     pub fn preorder<'a>(&'a self) -> PreOrderIter<'a, K, V> {
         PreOrderIter {
-            stack: Vec::new(),
+            stack: vec![self.root.as_ref()],
             current: self.root.as_ref(),
         }
     }
@@ -82,18 +84,84 @@ impl<K: Ord + PartialEq, V> BST<K, V> {
             current: self.root.as_ref(),
         }
     }
+
+    pub fn values_mut<'a>(&'a mut self) -> ValuesMut<'a, K, V> {
+        ValuesMut {
+            stack: Vec::new(),
+            current: self.root.as_mut(),
+        }
+    }
+
+    pub fn contains_val(&self, value: &V) -> bool {
+        let mut stack = vec![self.root.as_ref()];
+        while let Some(node) = stack.pop() {
+            let node = node.unwrap();
+            if &node.value == value {
+                return true;
+            } else if node.right.is_some() && node.left.is_some() {
+                stack.push(node.right.as_ref());
+                stack.push(node.left.as_ref());
+            } else if node.right.is_some() {
+                stack.push(node.right.as_ref());
+            } else if node.left.is_some() {
+                stack.push(node.left.as_ref());
+            } else {
+                break;
+            }
+        }
+        false
+    }
 }
 
+// We want to build up a stack of nodes in order 
+// Then we return the stack of nodes
+// We then implement the iterator on the stack of nodes
+// returning each item (the keys and values of each node) from the stack
+// on each call to next
+//
+//
+// two choices 
+// 
+// either we add the root and all left nodes to the stack
+// and then when we call next on the iterator implementation we add
+// the right nodes to the stack at this time
+//
+// or we traverse all the nodes in breadth first fashion adding them all to
+// the stack during into_iter
+pub struct IntoIter<K: Ord, V> {
+    stack: Vec<Option<Box<Node<K, V>>>>,
+}
+
+impl<K: Ord, V> IntoIterator for BST<K, V> {
+    type Item = (K, V);
+    type IntoIter = IntoIter<K, V>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter { stack: vec![self.root] }
+    }
+}
+
+impl<K: Ord, V> Iterator for IntoIter<K, V> {
+    type Item = (K, V);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(current) = self.stack.pop() {
+            let current = current.unwrap();
+            if current.right.is_some() {
+                self.stack.push(current.right)
+            } 
+
+            if current.left.is_some() {
+                self.stack.push(current.left)
+            }
+        Some((current.key, current.value))
+        } else {
+            None
+        }
+    }
+}
 
 pub struct InOrderIter<'a, K: Ord, V> {
-    stack: Vec<Option<&'a Box<Node<K, V>>>>,
-    current: Option<&'a Box<Node<K, V>>>,
-}
-pub struct PreOrderIter<'a, K: Ord, V> {
-    stack: Vec<Option<&'a Box<Node<K, V>>>>,
-    current: Option<&'a Box<Node<K, V>>>,
-}
-pub struct PostOrderIter<'a, K: Ord, V>{
     stack: Vec<Option<&'a Box<Node<K, V>>>>,
     current: Option<&'a Box<Node<K, V>>>,
 }
@@ -121,22 +189,30 @@ impl<'a, K: Ord, V> Iterator for InOrderIter<'a, K, V> {
     }
 }
 
+pub struct PreOrderIter<'a, K: Ord, V> {
+    stack: Vec<Option<&'a Box<Node<K, V>>>>,
+    current: Option<&'a Box<Node<K, V>>>,
+}
+
 impl<'a, K: Ord, V> Iterator for PreOrderIter<'a, K, V> {
     type Item = (&'a K, &'a V);
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             if let Some(current) = self.current {
-                self.stack.push(self.current);
                 let result = (&current.key, &current.value);
                 self.current = current.left.as_ref();
+                self.stack.push(self.current);
                 return Some(result);
             } else {
                 if let Some(node) = self.stack.pop() {
-                    let current = node.unwrap();
-                    self.current = current.right.as_ref();
-                    if self.current.is_some() {
-                        self.stack.push(self.current);
+                    if node.is_some() {
+                        let current = node.unwrap();
+                        self.current = current.right.as_ref();
+                        if self.current.is_some() {
+                            self.stack.push(self.current);
+
+                        }
                     }
                 } else {
                     return None;
@@ -144,6 +220,11 @@ impl<'a, K: Ord, V> Iterator for PreOrderIter<'a, K, V> {
             }
         }
     }
+}
+
+pub struct PostOrderIter<'a, K: Ord, V>{
+    stack: Vec<Option<&'a Box<Node<K, V>>>>,
+    current: Option<&'a Box<Node<K, V>>>,
 }
 
 impl<'a, K: Ord, V> Iterator for PostOrderIter<'a, K, V> {
@@ -175,6 +256,35 @@ impl<'a, K: Ord, V> Iterator for PostOrderIter<'a, K, V> {
                     return Some(result);
                 }
             } 
+        }
+    }
+}
+
+pub struct ValuesMut<'a, K: Ord, V> {
+    stack: Vec<Option<&'a mut Box<Node<K, V>>>>,
+    current: Option<&'a mut Box<Node<K, V>>>,
+}
+
+impl<'a, K: Ord, V> Iterator for ValuesMut<'a, K, V> {
+    type Item = &'a mut V;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(node) = self.stack.pop() {
+            let node = node.unwrap();
+            if let Some(right) = &mut node.right {
+                self.stack.push(Some(right));
+            }
+            if let Some(left) = &mut node.left {
+                self.stack.push(Some(left));
+            }
+            return Some(&mut node.value);
+        }
+        let current = self.current.take();
+        if let Some(current) = current {
+            self.stack.push(Some(&mut *current));
+            self.next()
+        } else {
+            None
         }
     }
 }
@@ -213,5 +323,22 @@ mod tests {
     fn height() {
         let tree = tree_setup();
         assert_eq!(tree.height(), 4);
+    }
+    #[test]
+    fn mutating_a_value() {
+        let mut tree = tree_setup();
+        for v in tree.values_mut() {
+            if v == &"hello" {
+                *v = "goodbye"
+            }
+        }
+        assert!(tree.contains_val(&"goodbye"));
+        assert!(!tree.contains_val(&"hello"));
+    }
+    #[test]
+    fn into_iterator() {
+        let tree = tree_setup();
+        let mut iter = tree.into_iter();
+        assert_eq!(Some((5, "hello")), iter.next());
     }
 }
