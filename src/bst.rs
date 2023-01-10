@@ -254,31 +254,57 @@ mod tests {
     #[test]
     fn inorder() {
         let tree = tree_setup();
+
         assert!(tree.root.is_some());
 
         let mut iter = tree.inorder();
 
         assert_eq!(iter.next(), Some((&1, &"rust")));
+        assert_eq!(iter.next(), Some((&2, &"world")));
+        assert_eq!(iter.next(), Some((&3, &"crate")));
+        assert_eq!(iter.next(), Some((&4, &"hello")));
+        assert_eq!(iter.next(), Some((&5, &"iter")));
+        assert_eq!(iter.next(), Some((&6, &"mod")));
+        assert_eq!(iter.next(), Some((&7, &"tree")));
+        assert_eq!(iter.next(), None);
     }
     #[test]
     fn preorder() {
+
         let tree = tree_setup();
 
         let mut iter = tree.preorder();
 
         assert_eq!(iter.next(), Some((&4, &"hello")));
+        assert_eq!(iter.next(), Some((&2, &"world")));
+        assert_eq!(iter.next(), Some((&1, &"rust")));
+        assert_eq!(iter.next(), Some((&3, &"crate")));
+        assert_eq!(iter.next(), Some((&6, &"mod")));
+        assert_eq!(iter.next(), Some((&5, &"iter")));
+        assert_eq!(iter.next(), Some((&7, &"tree")));
+        assert_eq!(iter.next(), None);
     }
     #[test]
     fn postorder() {
+
         let tree = tree_setup();
         
         let mut iter = tree.postorder();
 
-        assert_eq!(iter.next(), Some((&1, &"rust")))
+        assert_eq!(iter.next(), Some((&1, &"rust")));
+        assert_eq!(iter.next(), Some((&3, &"crate")));
+        assert_eq!(iter.next(), Some((&2, &"world")));
+        assert_eq!(iter.next(), Some((&5, &"iter")));
+        assert_eq!(iter.next(), Some((&7, &"tree")));
+        assert_eq!(iter.next(), Some((&6, &"mod")));
+        assert_eq!(iter.next(), Some((&4, &"hello")));
+        assert_eq!(iter.next(), None);
     }
     #[test]
     fn values_mut() {
+
         let mut tree = tree_setup();
+
         for v in tree.values_mut() {
             if v == &"hello" {
                 *v = "goodbye"
@@ -286,11 +312,33 @@ mod tests {
         }
         assert!(tree.contains_val(&"goodbye"));
         assert!(!tree.contains_val(&"hello"));
+
+        let mut iter_mut = tree.values_mut();
+
+        assert_eq!(iter_mut.next(), Some(&mut "goodbye"));
+        assert_eq!(iter_mut.next(), Some(&mut "world"));
+        assert_eq!(iter_mut.next(), Some(&mut "mod"));
+        assert_eq!(iter_mut.next(), Some(&mut "rust"));
+        assert_eq!(iter_mut.next(), Some(&mut "crate"));
+        assert_eq!(iter_mut.next(), Some(&mut "iter"));
+        assert_eq!(iter_mut.next(), Some(&mut "tree"));
+        assert_eq!(iter_mut.next(), None);
+
     }
     #[test]
     fn into_iterator() {
+
         let tree = tree_setup();
-        let mut iter = tree.into_iter();
-        assert_eq!(Some((4, "hello")), iter.next());
+
+        let mut into_iter = tree.into_iter();
+
+        assert_eq!(into_iter.next(), Some((4, "hello")));
+        assert_eq!(into_iter.next(), Some((2, "world")));
+        assert_eq!(into_iter.next(), Some((1, "rust")));
+        assert_eq!(into_iter.next(), Some((3, "crate")));
+        assert_eq!(into_iter.next(), Some((6, "mod")));
+        assert_eq!(into_iter.next(), Some((5, "iter")));
+        assert_eq!(into_iter.next(), Some((7, "tree")));
+        assert_eq!(into_iter.next(), None);
     }
 }
