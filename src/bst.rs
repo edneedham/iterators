@@ -39,31 +39,6 @@ impl<K: Ord + PartialEq, V: PartialEq> BST<K, V> {
         *current = Some(Box::new(input));
     }
 
-    pub fn height(&self) -> usize {
-        let mut queue = VecDeque::new();
-        let mut height = 0;
-        if self.root.is_none() {
-            return height;
-        } else {
-            queue.push_back(self.root.as_ref());
-            while let Some(node) = queue.pop_front() {
-                let current = node.unwrap();
-                height += 1;
-                if current.left.is_some() && current.right.is_some() {
-                    queue.push_back(current.left.as_ref());
-                    queue.push_back(current.right.as_ref());
-                } else if current.left.is_some() {
-                    queue.push_back(current.left.as_ref());
-                } else if current.right.is_some() {
-                    queue.push_back(current.right.as_ref());
-                } else {
-                    break;
-                }
-            }
-            height
-        }
-    }
-
     pub fn inorder<'a>(&'a self) -> InOrderIter<'a, K, V> {
         InOrderIter {
             stack: Vec::new(),
@@ -94,20 +69,10 @@ impl<K: Ord + PartialEq, V: PartialEq> BST<K, V> {
     }
 
     pub fn contains_val(&self, value: &V) -> bool {
-        let mut stack = vec![self.root.as_ref()];
-        while let Some(node) = stack.pop() {
-            let node = node.unwrap();
-            if &node.value == value {
+        let mut iter = self.preorder();
+        while let Some(node) = iter.next() {
+            if node.1 == value {
                 return true;
-            } else if node.right.is_some() && node.left.is_some() {
-                stack.push(node.right.as_ref());
-                stack.push(node.left.as_ref());
-            } else if node.right.is_some() {
-                stack.push(node.right.as_ref());
-            } else if node.left.is_some() {
-                stack.push(node.left.as_ref());
-            } else {
-                break;
             }
         }
         false
