@@ -15,7 +15,7 @@ pub struct Node<K, V> {
     value: V,
 }
 
-impl<K: Ord + PartialEq, V> Node<K, V> {
+impl<K: Ord, V: PartialEq> Node<K, V> {
     pub fn new(key: K, value: V) -> Self {
         Self {
             left: None,
@@ -26,7 +26,7 @@ impl<K: Ord + PartialEq, V> Node<K, V> {
     }
 }
 
-impl<K: Ord + PartialEq, V: PartialEq> BST<K, V> {
+impl<K: Ord, V: PartialEq> BST<K, V> {
     pub fn insert(&mut self, input: Node<K, V>) {
         let mut current = &mut self.root;
         while let Some(node) = current {
@@ -79,11 +79,11 @@ impl<K: Ord + PartialEq, V: PartialEq> BST<K, V> {
     }
 }
 
-pub struct IntoIter<K: Ord, V> {
+pub struct IntoIter<K, V> {
     stack: Vec<Option<Box<Node<K, V>>>>,
 }
 
-impl<K: Ord, V> IntoIterator for BST<K, V> {
+impl<K: Ord, V: PartialEq> IntoIterator for BST<K, V> {
     type Item = (K, V);
     type IntoIter = IntoIter<K, V>;
 
@@ -94,7 +94,7 @@ impl<K: Ord, V> IntoIterator for BST<K, V> {
     }
 }
 
-impl<K: Ord, V> Iterator for IntoIter<K, V> {
+impl<K: Ord, V: PartialEq> Iterator for IntoIter<K, V> {
     type Item = (K, V);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -115,12 +115,12 @@ impl<K: Ord, V> Iterator for IntoIter<K, V> {
     }
 }
 
-pub struct InOrderIter<'a, K: Ord, V> {
+pub struct InOrderIter<'a, K, V> {
     stack: Vec<Option<&'a Box<Node<K, V>>>>,
     current: Option<&'a Box<Node<K, V>>>,
 }
 
-impl<'a, K: Ord, V> Iterator for InOrderIter<'a, K, V> {
+impl<'a, K: Ord, V: PartialEq> Iterator for InOrderIter<'a, K, V> {
     type Item = (&'a K, &'a V);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -142,11 +142,11 @@ impl<'a, K: Ord, V> Iterator for InOrderIter<'a, K, V> {
     }
 }
 
-pub struct PreOrderIter<'a, K: Ord, V> {
+pub struct PreOrderIter<'a, K, V> {
     stack: Vec<Option<&'a Box<Node<K, V>>>>,
 }
 
-impl<'a, K: Ord, V> Iterator for PreOrderIter<'a, K, V> {
+impl<'a, K: Ord, V: PartialEq> Iterator for PreOrderIter<'a, K, V> {
     type Item = (&'a K, &'a V);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -167,12 +167,12 @@ impl<'a, K: Ord, V> Iterator for PreOrderIter<'a, K, V> {
     }
 }
 
-pub struct PostOrderIter<'a, K: Ord, V>{
+pub struct PostOrderIter<'a, K, V>{
     stack: Vec<Option<&'a Box<Node<K, V>>>>,
     current: Option<&'a Box<Node<K, V>>>,
 }
 
-impl<'a, K: Ord, V> Iterator for PostOrderIter<'a, K, V> {
+impl<'a, K: Ord, V: PartialEq> Iterator for PostOrderIter<'a, K, V> {
     type Item = (&'a K, &'a V);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -205,7 +205,7 @@ impl<'a, K: Ord, V> Iterator for PostOrderIter<'a, K, V> {
     }
 }
 
-pub struct ValuesMut<'a, K: Ord, V> {
+pub struct ValuesMut<'a, K, V> {
     queue: VecDeque<Option<&'a mut Box<Node<K, V>>>>,
 }
 
