@@ -209,7 +209,7 @@ pub struct ValuesMut<'a, K, V> {
     queue: VecDeque<Option<&'a mut Box<Node<K, V>>>>,
 }
 
-impl<'a, K: Ord, V> Iterator for ValuesMut<'a, K, V> {
+impl<'a, K: Ord, V: PartialEq> Iterator for ValuesMut<'a, K, V> {
     type Item = &'a mut V;
 
     fn next(&mut self) -> Option<Self::Item> {
