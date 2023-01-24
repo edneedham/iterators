@@ -130,9 +130,9 @@ impl<'a, K: Ord, V: PartialEq> Iterator for InOrderIter<'a, K, V> {
                 self.current = current.left.as_ref();
             } else { // traversed all of the left children from root 
                 if let Some(node) = self.stack.pop() {
-                    let current = node.unwrap();
-                    let result = (&current.key, &current.value);
-                    self.current = current.right.as_ref(); 
+                    let popped = node.unwrap();
+                    let result = (&popped.key, &popped.value);
+                    self.current = popped.right.as_ref(); 
                     return Some(result);
                 } else {
                     return None;
@@ -187,16 +187,16 @@ impl<'a, K: Ord, V: PartialEq> Iterator for PostOrderIter<'a, K, V> {
                 return None;
             } 
             if let Some(node) = self.stack.pop() {
-                let current = node.unwrap();
-                if !self.stack.is_empty() && current.right.is_some() &&
+                let popped = node.unwrap();
+                if !self.stack.is_empty() && popped.right.is_some() &&
                     self.stack.get(self.stack.len()-1)
-                        .unwrap().unwrap().key == current.right.as_ref().unwrap().key {
+                        .unwrap().unwrap().key == popped.right.as_ref().unwrap().key {
                             self.stack.pop();
-                            self.stack.push(Some(current));
+                            self.stack.push(Some(popped));
 
-                            self.current = current.right.as_ref();
+                            self.current = popped.right.as_ref();
                 } else {
-                    let result = (&current.key, &current.value);
+                    let result = (&popped.key, &popped.value);
                     self.current = None;
                     return Some(result);
                 }
@@ -214,14 +214,14 @@ impl<'a, K: Ord, V: PartialEq> Iterator for ValuesMut<'a, K, V> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(node) = self.queue.pop_front() {
-            let node = node.unwrap();
-            if let Some(left) = &mut node.left {
+            let current = node.unwrap();
+            if let Some(left) = &mut current.left {
                 self.queue.push_back(Some(left));
             }
-            if let Some(right) = &mut node.right {
+            if let Some(right) = &mut current.right {
                 self.queue.push_back(Some(right));
             }
-            return Some(&mut node.value);
+            return Some(&mut current.value);
         } else {
             None
         }
